@@ -53,12 +53,13 @@ func checkID(r *http.Request) (bool, string) {
 func getPoint(w http.ResponseWriter, r *http.Request) {
 
 	found, message := checkID(r)
+
 	if !found {
 		http.Error(w, message, http.StatusNoContent)
 		return
 	}
-
-	resp, err := json.Marshal(message)
+	task, _ := tasks[message]
+	resp, err := json.Marshal(task)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -71,12 +72,6 @@ func getPoint(w http.ResponseWriter, r *http.Request) {
 
 func getPoints(w http.ResponseWriter, r *http.Request) {
 	var taskMass []Task
-
-	found, message := checkID(r)
-	if !found {
-		http.Error(w, message, http.StatusNoContent)
-		return
-	}
 
 	for _, task := range tasks {
 		taskMass = append(taskMass, task)
@@ -96,6 +91,12 @@ func getPoints(w http.ResponseWriter, r *http.Request) {
 func postPoint(w http.ResponseWriter, r *http.Request) {
 	var task Task
 	var buf bytes.Buffer
+
+	found, _ := checkID(r)
+	if found {
+		http.Error(w, "Task ID busy", http.StatusNoContent)
+		return
+	}
 
 	_, err := buf.ReadFrom(r.Body)
 
@@ -135,5 +136,6 @@ func main() {
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		fmt.Printf("Ошибка при запуске сервера: %s", err.Error())
 		return
+
 	}
 }
